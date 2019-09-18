@@ -223,10 +223,10 @@ class Simulation:
                 if accel_type == 'constant' or accel_type == 'dynamic':
                     accel_this_step = accel[a_ind]
                 # smoothstep velocity
-                elif accel_type == 'smoothstep':
+                elif 'smoothstep' in accel_type:
                     accel_this_step = smoothstep_accel(iteration/accel_samples) * accel[a_ind]
                 # smootherstep velocity
-                elif accel_type == 'smootherstep':
+                elif 'smootherstep' in accel_type:
                     accel_this_step = smootherstep_accel(iteration/accel_samples) * accel[a_ind]
                 elif accel_type == 'destructive':
                     accel_this_step = destruct(iteration, accel_samples) * accel[a_ind]
