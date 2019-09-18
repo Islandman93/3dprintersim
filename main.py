@@ -20,7 +20,8 @@ def add_default_args(parser):
     parser.add_argument('period_x', type=float, help='Determines stiffness of the x spring in simulation')
     parser.add_argument('period_y', type=float, help='Determines stiffness of the y spring in simulation')
     parser.add_argument('-at', '--acceleration_type', type=str.lower, choices=
-                        ['constant', 'smoothstep', 'smootherstep', 'dynamic', 'destructive'],
+                        ['constant', 'smoothstep', 'smootherstep', 'dynamic', 'destructive',
+                         'jerk-limited-smoothstep', 'jerk-limited-smootherstep'],
                         help='Acceleration type', default='constant')
     parser.add_argument('-o', '--origin', nargs='+', type=float, help='XY origin point', default=(0, 0))
     parser.add_argument('-sr', '--sample_rate', type=int, help='The number of physics steps in a second', default=40000)
@@ -71,8 +72,10 @@ sim = Simulation(2, (args.period_x, args.period_y), sample_rate=args.sample_rate
 # klipper planner with square_corner_velocity
 if args.planner == 'klipper':
     from planners.klipperplanner import KlipperPlanner
-    dynamic_accel = args.acceleration_type == 'dynamic' or args.acceleration_type == 'destructive'
-    klip_plan = KlipperPlanner(args.acceleration, args.velocity, args.square_corner_velocity, args.accel_to_decel, dynamic_accel)
+
+    # only used for jerk-limited acceleration profiles
+    jerk = 0.6 * args.acceleration * (1 / max(args.period_x, args.period_y))
+    klip_plan = KlipperPlanner(args.acceleration, args.velocity, args.square_corner_velocity, args.accel_to_decel, args.acceleration_type, jerk=jerk)
 
     # add to planner's move queue
     current_pos = first_move_position
@@ -95,8 +98,6 @@ if args.planner == 'klipper':
         try:
             sim._move_xy(move_offset, planned_move.accel, planned_move.decel, planned_move.accel_t, planned_move.cruise_t, planned_move.decel_t, planned_move.start_v, planned_move.cruise_v,
                         planned_move.end_v, args.acceleration_type)
-            # sim.move_xy(move_offset, args.acceleration, planned_move.start_v, planned_move.cruise_v,
-                        # planned_move.end_v, args.acceleration_type)
         except Exception as e:
             print('Error on move {}'.format(move_ind))
             raise e
